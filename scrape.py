@@ -281,19 +281,19 @@ def donationprop_scraper_to_dataframe(donation_list, flpath):
             json_format = json.loads(json_script)
             df = pd.json_normalize(json_format['props']['pageProps']['campaign'])
             df['time_scraped'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print("Successfully scrape donation from " + donation_id + ". Going to scrape the next donation.")
+            print("Successfully scrape donation from " + str(donation_id) + ". Going to scrape the next donation.")
 
             df_donations_prop = df_donations_prop.append(df)
             
             # debuggers to see which files we already read
             with open(f'{flpath}logreader_debug.txt', 'a') as fh:
-                print('succesfully read ' + donation_id, file=fh)
+                print('succesfully read ' + str(donation_id), file=fh)
         
         except:
             # debuggers to see which files went to error
-            print("Error when scraping donation from " + donation_id + ". Going to scrape the next donation.")
+            print("Error when scraping donation from " + str(donation_id) + ". Going to scrape the next donation.")
             with open(f'{flpath}logreader_debug.txt', 'a') as fh:
-                print('error when reading ' + donation_id, file=fh)
+                print('error when reading ' + str(donation_id), file=fh)
                 pass
             
     today = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -364,6 +364,78 @@ def donor_scraper_cont(donation_id, url_index, flpath):
             next = data['next']
             url_new = url + 'next=' + next
             
+            # debuggers to see which files we already read
+            with open(f'{flpath}logreader_debug.txt', 'a') as fh:
+                print('succesfully read ' + donation_id + ' ' + next, file=fh)
+            
+        except:
+            # debuggers to see which files went to error
+            with open(f'{flpath}logreader_debug.txt', 'a') as fh:
+                print('error when reading ' + donation_id + ' ' + next, file=fh)
+            pass    
+            
+    filepath = Path(flpath +  donation_id + '_donorsinfo_appended.csv')  
+    filepath.parent.mkdir(parents=True, exist_ok=True)  
+    df_appended.to_csv(filepath, index=False)
+    print('Sucessfully read all the donors information.')
+    
+
+def donor_scraper_cont(donation_id, start_id, flpath):
+    '''
+    function to scrape list of all donors from a donation
+    donatio_id: donor short name, take the donor from the url
+    flpath: path to save the scrapped data
+    '''
+    
+    # filepath_num for the iteration
+    # next to append next page, filled an initial value to not trigger the while loop
+    next = 'trigger' 
+    filepath_num = 0
+    url = 'view-source:https://core.kitabisa.com/campaigns/' + donation_id + '/donors?sort=verified&' 
+    url_start = url + 'next=' + start_id
+    url_cont = url
+    i = 0
+    df_appended = pd.DataFrame()
+    
+    while next != '':
+        try:
+            chrome_options = Options()
+            # hide the chrome ui when running the webdriver
+            chrome_options.add_argument("--headless")  
+            chrome_options.add_argument("--window-size=1920,1080")
+            # user agent to avoid the web incorrectly read the user agent as a headless browser
+            user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36' 
+            chrome_options.add_argument(f'user-agent={user_agent}')
+
+            driver = webdriver.Chrome(ChromeDriverManager().install(),
+                                      options=chrome_options)  # to bypass the problem in missing path of webdriver
+            if i == 0:
+                driver.get(url_start)
+            else:
+                driver.get(url_cont)
+            
+            content = driver.page_source
+            content = driver.find_element_by_class_name('line-content').text
+            # print(content) -> turned off as it makes crash if we scrape a lot of data
+            driver.quit()
+
+            data = json.loads(content)  # this is the json data for the list of the donors
+        
+            df = pd.json_normalize(data, record_path=['data'])
+            df['time_scrapped']= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            df['short_url'] = donation_id
+            df_appended = df_appended.append(df)
+            # print(df_appended) -> turned off as it makes crash if we scrape a lot of data
+
+            filepath_num = filepath_num + 1
+            filepath = Path(flpath +  donation_id + '_donorsinfo' + '_' + str(filepath_num) +'.csv')  
+            filepath.parent.mkdir(parents=True, exist_ok=True)  
+            df.to_csv(filepath, index=False)
+        
+            next = data['next']
+            url_cont = url + 'next=' + next
+            
+            i = i + 1
             # debuggers to see which files we already read
             with open(f'{flpath}logreader_debug.txt', 'a') as fh:
                 print('succesfully read ' + donation_id + ' ' + next, file=fh)
