@@ -8,4 +8,4 @@ To achieve this objective, this study observes number of people donating and the
 
 From the result, I found that while the participation rate increases incrementally in the beginning period, it decreases when the campaigns are about halfway to the end state. I demonstrate that while making a seed donation boosts participation rates in the early stages, as people perceive marginal value of progress to the initial state, this decreases their motivation for the campaign which is about to achieve its target amount.
 
-With all the findings from this study, it is strongly advised for any fundraisers and campaigners to put a little amount of seed money on their campaign, around 10% - 30% of the target.
+With all the findings from this study, **it is strongly advised for any fundraisers and campaigners to put a little amount of seed money on their campaign, around 10% - 30% of the target.**
